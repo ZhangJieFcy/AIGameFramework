@@ -1,4 +1,6 @@
 {
-  "gameName": "AIGameFramework Sample",
-  "targetFps": 60
+  "gameName": "AIGameFramework 示例",
+  "targetFps": 60,
+  "bgmVolume": 0.6,
+  "sfxVolume": 1
 }

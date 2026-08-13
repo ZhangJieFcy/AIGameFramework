@@ -7,21 +7,23 @@ import {
   MeshStandardMaterial
 } from "three";
 import { CameraController, GameContext, IGame } from "../framework";
+import { HelpView } from "./ui/HelpView";
+import { HudView } from "./ui/HudView";
 
 type SaveData = {
   clicks: number;
 };
 
 /**
- * 以后做新游戏：主要改这个文件（以及同目录下你自己加的玩法文件）。
- * 框架（平台、渲染循环、存档、打包）不用动。
+ * 示例游戏：旋转方块。以后做新游戏主要改 src/game/ 这里。
+ * 框架能力通过 ctx 调用，文件顶部注释里有用法。
  */
 export class MyGame implements IGame {
   public readonly saveKey = "aigame_sample_v1";
   private cube: Mesh | null = null;
   private cameraCtrl: CameraController | null = null;
   private clicks = 0;
-  private hud: HTMLDivElement | null = null;
+  private readonly hud = new HudView();
 
   public load(data: unknown): void {
     const parsed = data as SaveData;
@@ -35,6 +37,7 @@ export class MyGame implements IGame {
   }
 
   public init(ctx: GameContext): void {
+    ctx.log.info("示例游戏启动", ctx.platform.id);
     ctx.scene.background = new Color(0x1b2433);
 
     ctx.scene.add(new AmbientLight(0xffffff, 0.7));
@@ -51,20 +54,47 @@ export class MyGame implements IGame {
     this.cameraCtrl = new CameraController(ctx.camera);
     this.cameraCtrl.setLookAt(0, 0, 0);
 
-    this.hud = document.createElement("div");
-    this.hud.style.cssText =
-      "position:absolute;left:12px;top:12px;padding:10px 12px;border-radius:10px;" +
-      "background:rgba(0,0,0,0.55);color:#fff;font-family:Arial,sans-serif;line-height:1.6;";
-    ctx.mount.appendChild(this.hud);
+    ctx.ui.register(this.hud);
+    ctx.ui.register(new HelpView());
+    this.hud.gameName = ctx.config.getString("gameName", "示例游戏");
+    this.hud.platform = ctx.platform.id;
+    this.hud.clicks = this.clicks;
+    ctx.ui.open("hud");
 
-    ctx.mount.addEventListener("pointerdown", () => {
-      this.clicks += 1;
-      if (this.cube) {
-        (this.cube.material as MeshStandardMaterial).color.setHSL(Math.random(), 0.65, 0.55);
+    ctx.audio.setBgmVolume(ctx.config.getNumber("bgmVolume", 0.6));
+    ctx.audio.setSfxVolume(ctx.config.getNumber("sfxVolume", 1));
+    // 把 mp3 放到 public/audio/ 后取消下面两行注释即可出声：
+    // ctx.audio.register("bgm", "./audio/bgm.mp3", { loop: true });
+    // ctx.audio.register("click", "./audio/click.mp3");
+
+    ctx.pool.register(
+      "dummy",
+      () => ({ active: true }),
+      (obj) => {
+        obj.active = false;
       }
-    });
+    );
+    ctx.pool.warmup("dummy", 4);
 
-    this.refreshHud(ctx);
+    ctx.input.onTap(() => {
+      this.clicks += 1;
+      this.hud.clicks = this.clicks;
+      ctx.platform.vibrate(15);
+      ctx.audio.playSfx("click");
+      ctx.bus.emit("game:click", this.clicks);
+      if (!this.cube) {
+        return;
+      }
+      (this.cube.material as MeshStandardMaterial).color.setHSL(ctx.rng.float(0, 1), 0.65, 0.55);
+      ctx.tween.killAll();
+      ctx.tween.start({
+        from: 1.25,
+        to: 1,
+        duration: 0.22,
+        ease: "quadOut",
+        onUpdate: (v) => this.cube?.scale.setScalar(v)
+      });
+    });
   }
 
   public update(dt: number, ctx: GameContext): void {
@@ -73,17 +103,5 @@ export class MyGame implements IGame {
       this.cube.rotation.x += dt * 0.35;
     }
     this.cameraCtrl?.update(dt);
-    this.refreshHud(ctx);
-  }
-
-  private refreshHud(ctx: GameContext): void {
-    if (!this.hud) {
-      return;
-    }
-    this.hud.innerHTML =
-      `AIGameFramework 示例<br>` +
-      `平台: ${ctx.platform.id}<br>` +
-      `点击次数: ${this.clicks}<br>` +
-      `请编辑 src/game/MyGame.ts 开始做你的游戏`;
   }
 }

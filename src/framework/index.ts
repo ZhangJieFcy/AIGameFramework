@@ -1,10 +1,25 @@
 export type { GameContext, GameEvents, IGame } from "./types";
 export type { IPlatform } from "./platform/IPlatform";
+export type { IAudioHandle } from "./platform/IAudioHandle";
+export type { IView } from "./ui/IView";
+export type { AssetManifest, AssetProgress } from "./core/AssetLoader";
+export type { TweenOptions, EaseName } from "./core/Tween";
+
 export { bootstrap } from "./bootstrap/App";
 export { createPlatform } from "./bootstrap/createPlatform";
 export { EventBus } from "./core/EventBus";
 export { Time } from "./core/Time";
 export { SaveSystem } from "./core/SaveSystem";
 export { AssetLoader } from "./core/AssetLoader";
+export { Config } from "./core/Config";
+export { Pool } from "./core/Pool";
+export { Scheduler } from "./core/Scheduler";
+export { Tween } from "./core/Tween";
+export { Random } from "./core/Random";
+export { Logger } from "./core/Logger";
+export { AudioManager } from "./audio/AudioManager";
+export { UIManager } from "./ui/UIManager";
+export { InputManager } from "./input/InputManager";
+export { Screen } from "./screen/Screen";
 export { Renderer3D } from "./render/Renderer3D";
 export { CameraController } from "./render/CameraController";

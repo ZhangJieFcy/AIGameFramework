@@ -1,5 +1,11 @@
 import { PerspectiveCamera, Scene, WebGLRenderer } from "three";
 
+/**
+ * 3D 渲染
+ *
+ * 功能说明：
+ * 创建 Three.js 场景、相机、WebGL 画布。游戏用 ctx.scene / ctx.camera，不要自己再建 Renderer。
+ */
 export class Renderer3D {
   public readonly scene = new Scene();
   public readonly camera: PerspectiveCamera;
