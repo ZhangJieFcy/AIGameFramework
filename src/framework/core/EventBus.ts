@@ -42,8 +42,14 @@ export class EventBus<Events extends Record<string, unknown>> {
     if (!list) {
       return;
     }
-    for (const handler of list) {
-      handler(payload);
+    // 快照派发：emit 期间增删监听器不影响本次派发；
+    // 单个监听器抛错只记日志，不中断其他监听器（错误隔离）
+    for (const handler of [...list]) {
+      try {
+        handler(payload);
+      } catch (err) {
+        console.error(`[AIGame] 事件 "${String(event)}" 的监听器出错`, err);
+      }
     }
   }
 }

@@ -29,11 +29,26 @@ export async function bootstrap(game: IGame): Promise<void> {
   if (!mount) {
     throw new Error("#app not found");
   }
+  // HMR 热更新会重跑 bootstrap：清掉上次挂进 mount 的 canvas / UI 根节点，避免叠加
+  while (mount.firstChild && mount.removeChild) {
+    mount.removeChild(mount.firstChild);
+  }
 
-  const renderer = new Renderer3D(mount);
+  // 先读配置，渲染质量（抗锯齿/像素比）等参数从 game.json 来
+  const log = new Logger();
+  const config = new Config();
+  try {
+    await config.load("./config/game.json");
+  } catch (err) {
+    log.warn("未加载到 config/game.json", err);
+  }
+
+  const renderer = new Renderer3D(mount, {
+    antialias: config.getBoolean("antialias", true),
+    pixelRatio: config.getNumber("pixelRatio", 2)
+  });
   const ui = new UIManager(mount);
   const saveKey = game.saveKey ?? "aigame_save_v1";
-  const log = new Logger();
   const ctx: GameContext = {
     platform,
     mount,
@@ -44,7 +59,7 @@ export async function bootstrap(game: IGame): Promise<void> {
     time: new Time(),
     bus: new EventBus<GameEvents>(),
     assets: new AssetLoader(),
-    config: new Config(),
+    config,
     save: new SaveSystem(platform, saveKey),
     audio: new AudioManager(platform),
     ui,
@@ -56,12 +71,6 @@ export async function bootstrap(game: IGame): Promise<void> {
     log
   };
   ui.bind(ctx);
-
-  try {
-    await ctx.config.load("./config/game.json");
-  } catch (err) {
-    log.warn("未加载到 config/game.json", err);
-  }
 
   try {
     await ctx.assets.loadManifest("./config/manifest.json", (info) => {

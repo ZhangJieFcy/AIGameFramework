@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "build:web": "vite build --outDir dist-web",
     "build:wechat": "node scripts/build-wechat.mjs",
-    "build:douyin": "node scripts/build-douyin.mjs"
+    "build:douyin": "node scripts/build-douyin.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:adapter": "node scripts/smoke-adapter.mjs weapp && node scripts/smoke-adapter.mjs tt"
   },
   "dependencies": {
     "three": "^0.183.2"
@@ -18,6 +21,7 @@
     "@types/node": "^25.6.0",
     "@types/three": "^0.183.1",
     "typescript": "^6.0.2",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vitest": "^4.1.10"
   }
 }

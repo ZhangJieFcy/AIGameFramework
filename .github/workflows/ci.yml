@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Type check (app + node configs)
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Minigame adapter smoke tests
+        run: npm run test:adapter
+      - name: Build web
+        run: npm run build:web
+      - name: Build wechat minigame
+        run: npm run build:wechat
+      - name: Build douyin minigame
+        run: npm run build:douyin

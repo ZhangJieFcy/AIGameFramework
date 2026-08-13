@@ -1,6 +1,6 @@
 import type { PerspectiveCamera, Scene } from "three";
 import type { AudioManager } from "./audio/AudioManager";
-import type { AssetLoader } from "./core/AssetLoader";
+import type { AssetLoader, AssetProgress } from "./core/AssetLoader";
 import type { Config } from "./core/Config";
 import type { EventBus } from "./core/EventBus";
 import type { Logger } from "./core/Logger";
@@ -17,13 +17,18 @@ import type { Screen } from "./screen/Screen";
 import type { UIManager } from "./ui/UIManager";
 
 /**
- * 框架事件名（也可自己 emit 任意字符串）
- * assets:progress  资源加载进度
- * ui:open / ui:close
- * audio:mute
- * game:...         留给玩法
+ * 框架事件表：框架自己发的事件有具体类型，写错字段会编译报错。
+ * 玩法自定义事件（如 "game:score"）走末尾的 Record<string, unknown> 索引，仍可自由使用。
+ * - assets:progress  资源加载进度
+ * - ui:open / ui:close
+ * - audio:mute
  */
-export type GameEvents = Record<string, unknown>;
+export type GameEvents = {
+  "assets:progress": AssetProgress;
+  "ui:open": { name: string };
+  "ui:close": { name: string };
+  "audio:mute": boolean;
+} & Record<string, unknown>;
 
 /**
  * 游戏上下文：框架能力都从这里拿。

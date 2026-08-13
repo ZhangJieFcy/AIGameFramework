@@ -2,5 +2,7 @@
   "gameName": "AIGameFramework 示例",
   "targetFps": 60,
   "bgmVolume": 0.6,
-  "sfxVolume": 1
+  "sfxVolume": 1,
+  "antialias": true,
+  "pixelRatio": 2
 }

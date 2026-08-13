@@ -1,10 +1,22 @@
 # AIGameFramework
 
-Three.js + TypeScript 小游戏框架。已接好 Web / 微信小游戏 / 抖音小游戏，以及界面、音频、对象池、资源、事件、输入、定时器、缓动、存档。
+Three.js + TypeScript 小游戏框架。Web / 微信小游戏 / 抖音小游戏三端工程，内置界面、音频、对象池、资源、事件、输入、定时器、缓动、存档、配置、随机、日志。
 
 以后做新游戏：克隆本仓库，主要改 `src/game/`，不要改 `src/framework/`。
 
 仓库地址：https://github.com/ZhangJieFcy/AIGameFramework.git
+
+## 平台支持现状
+
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| Web | ✅ 可用 | `npm run dev` / `npm run build:web` |
+| 微信小游戏 | 🚧 桥接可用 | `npm run build:wechat` 出包；3D 渲染 / 输入 / 资源 / 存档已桥接 |
+| 抖音小游戏 | 🚧 桥接可用 | `npm run build:douyin` 出包；同上 |
+
+> ⚠️ 小游戏端说明：已用 IIFE 单包 + 适配器打通主循环、触摸输入、本地 JSON 读取和贴图加载，
+> 但 DOM 版 UI（`UIManager`）在小游戏端是无渲染占位，广告 / 分享等业务能力为占位实现，
+> 真机表现仍需按开发者工具与真机控制台逐项验证。
 
 ## 新开一个游戏
 
@@ -15,7 +27,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开提示的本地地址。不要用 `file://` 双击 html。
+浏览器打开提示的本地地址。不要用 `file://` 双击 html（配置是 `fetch` 读的，会黑屏或加载失败）。
 
 然后编辑：
 
@@ -39,7 +51,7 @@ npm run dev
 | `ctx.input` | 点击、键盘 | `onTap(() => {})` `justTapped` |
 | `ctx.scheduler` | 延时、循环 | `delay(1, fn)` `interval(0.5, fn)` |
 | `ctx.tween` | 数字缓动 | `start({ from, to, duration, onUpdate })` |
-| `ctx.save` | 存档 | 实现游戏的 `save`/`load` 即可自动存 |
+| `ctx.save` | 存档 | 实现游戏的 `save`/`load` 即可自动存（自带版本号） |
 | `ctx.config` | 读 game.json | `getString("gameName", "")` |
 | `ctx.rng` | 随机 | `int(1,6)` `float()` `pick(list)` |
 | `ctx.log` | 日志 | `info` / `warn` / `error` |
@@ -88,10 +100,22 @@ ctx.pool.release("bullet", b);
 
 ## 命令
 
-- `npm run dev` 本地开发
-- `npm run build:web` 产出 `dist-web/`
-- `npm run build:wechat` 产出 `dist-wechat/`（导入微信开发者工具）
-- `npm run build:douyin` 产出 `dist-douyin/`（导入抖音开发者工具）
+所有命令都在项目根目录执行。第一次使用先 `npm install`。
+
+| 命令 | 作用 | 产物 |
+|------|------|------|
+| `npm run dev` | 本地开发、热更新 | 无，浏览器访问本地地址 |
+| `npm run build:web` | Web 发布包 | `dist-web/` |
+| `npm run build` | 默认构建（同 web，输出 `dist/`） | `dist/` |
+| `npm run build:wechat` | 微信小游戏包（IIFE 单包 + 适配器） | `dist-wechat/` |
+| `npm run build:douyin` | 抖音小游戏包（IIFE 单包 + 适配器） | `dist-douyin/` |
+| `npm run preview` | 预览 `dist/` | 无 |
+| `npm run typecheck` | 类型检查（app + node 两份配置） | 无 |
+| `npm test` | 跑框架核心单元测试（vitest） | 无 |
+
+预览 Web 包：`npx vite preview --outDir dist-web`，或用任意本地 HTTP 服务打开 `dist-web`，不要双击 html。
+
+微信 / 抖音包：用对应开发者工具「导入项目」打开 `dist-wechat/` / `dist-douyin/`，控制台应出现 `runtime ready` 与示例游戏启动日志。
 
 ## 目录
 
@@ -99,9 +123,21 @@ ctx.pool.release("bullet", b);
 src/framework/   框架（一般不用改）
   audio/ ui/ input/ screen/ core/ platform/ render/
 src/game/        游戏逻辑（你主要改这里）
-public/config/   配置表
+public/config/   配置表（game.json / manifest.json）
+scripts/         构建脚本与小游戏适配器
+.github/workflows/  CI（push 自动 typecheck + test + 三端构建）
 ```
 
-## 说明
+## 小游戏构建原理（想深挖再看）
 
-当前小游戏适配是可运行桥接层，真机仍需按控制台报错逐项修。示例是旋转方块，用来验证框架能跑通。
+浏览器页面用默认 `vite.config.ts`（ES Module）。微信 / 抖音运行时只认 CommonJS 的
+`require()`，所以小游戏包用 `vite.minigame.config.ts` 把整个应用（含 three.js）打成
+单个 IIFE 文件，再由 `scripts/build-wechat.mjs` / `scripts/build-douyin.mjs` 组装
+`game.js`、`game.json` 和平台适配器。适配器补齐了本地 JSON 读取（fetch）、贴图
+（`wx/tt.createImage`）、触摸 → 指针事件等桥接，游戏代码不需要写平台专用分支。
+
+## 开发规范
+
+- 提交前跑 `npm run typecheck` 和 `npm test`，push 后 CI 会再验一遍三端构建。
+- 存档结构变更：`SaveSystem` 的 `VERSION` +1，并在 `load` 里做旧版本迁移。
+- 改框架请保持「管理器顶部注释 + ctx 注入」的既有模式。

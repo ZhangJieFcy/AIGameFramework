@@ -39,4 +39,9 @@ export class Config {
     const value = this.data[key];
     return typeof value === "string" ? value : fallback;
   }
+
+  public getBoolean(key: string, fallback: boolean): boolean {
+    const value = this.data[key];
+    return typeof value === "boolean" ? value : fallback;
+  }
 }
